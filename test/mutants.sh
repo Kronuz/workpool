@@ -38,7 +38,7 @@ PY
 		survived=1
 		return
 	fi
-	if THREADPOOL_STRESS_SECONDS=1 timeout 120 "$WORK/bin" >"$WORK/out" 2>&1; then
+	if WORKPOOL_STRESS_SECONDS=1 timeout 120 "$WORK/bin" >"$WORK/out" 2>&1; then
 		echo "SURVIVED: $name"
 		survived=1
 	else

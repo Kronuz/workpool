@@ -1,12 +1,12 @@
 # Architecture
 
-This document describes the internal design of `threadpool`: the thread primitive, the
+This document describes the internal design of `workpool`: the thread primitive, the
 `WorkPool` that runs on it, the concurrency model, and the trade-offs baked in. File
 references point at `work_pool.hh` unless noted otherwise.
 
 ## Overview
 
-`threadpool` is a fixed-size worker pool shared by many owners. Its job is to run
+`workpool` is a fixed-size worker pool shared by many owners. Its job is to run
 submitted work on a small set of long-lived, named threads, serving each owner's
 `WorkGroup` in fair turns, with latency classes and a wait that cannot deadlock.
 
@@ -51,7 +51,7 @@ lifetime is managed through the promise/future, not a `std::thread` handle.
 `set_thread_name` calls the platform `pthread_setname_np` variant (selected by
 the `config.h` feature macros), records the name in an internal
 `std::thread::id -> std::string` map under a mutex (so `get_thread_name` can look
-it up), and then calls `THREADPOOL_THREAD_REGISTER(pthread, name)` — the
+it up), and then calls `WORKPOOL_THREAD_REGISTER(pthread, name)` — the
 injectable hook where a crash handler registers the thread (Xapiand's
 `init_thread_info`).
 
@@ -151,26 +151,26 @@ service them. They flow through hooks that are no-ops by default:
 
 - `L_EXC(...)` — fired where `WorkPool` swallows an exception (a worker that fails to
   join, a task that throws: `work_pool.hh`).
-- `THREADPOOL_THREAD_REGISTER(pthread, name)` — fired in `set_thread_name`
+- `WORKPOOL_THREAD_REGISTER(pthread, name)` — fired in `set_thread_name`
   (`thread.cc`) right after a thread is named, to register it with a crash
   handler.
 
-The defaults live in `threadpool_trace.h`, and both `work_pool.hh` and
+The defaults live in `workpool_trace.h`, and both `work_pool.hh` and
 `thread.cc` reach them through a conditional include:
 
 ```cpp
-#ifdef THREADPOOL_TRACE_HEADER
-#  include THREADPOOL_TRACE_HEADER   // a consumer's header, e.g. Xapiand's
+#ifdef WORKPOOL_TRACE_HEADER
+#  include WORKPOOL_TRACE_HEADER   // a consumer's header, e.g. Xapiand's
 #else
-#  include "threadpool_trace.h"      // the bundled no-op defaults
+#  include "workpool_trace.h"      // the bundled no-op defaults
 #endif
 ```
 
-So a consumer points `THREADPOOL_TRACE_HEADER` at its own header (or defines the
+So a consumer points `WORKPOOL_TRACE_HEADER` at its own header (or defines the
 macros first) and gets real logging and crash registration back; otherwise the
-no-ops compile the instrumentation away. Each macro in `threadpool_trace.h` is
+no-ops compile the instrumentation away. Each macro in `workpool_trace.h` is
 `#ifndef`-guarded, so overriding a subset is fine. A third optional macro,
-`THREADPOOL_THREAD_NAME_PREFIX` (empty by default), prepends a string to OS-level
+`WORKPOOL_THREAD_NAME_PREFIX` (empty by default), prepends a string to OS-level
 thread names. This is a small, deliberate extension surface — a few hooks and a
 naming knob — not a logging framework.
 
@@ -219,8 +219,8 @@ This repository is a standalone extraction from
 [Xapiand](https://github.com/Kronuz/Xapiand). The delta is pure decoupling:
 
 - `thread.cc` dropped `#include "traceback.h"`; `init_thread_info(...)` became
-  `THREADPOOL_THREAD_REGISTER(...)` (no-op default), and the hardcoded
-  `"Xapiand:"` thread-name prefix became `THREADPOOL_THREAD_NAME_PREFIX` (empty
+  `WORKPOOL_THREAD_REGISTER(...)` (no-op default), and the hardcoded
+  `"Xapiand:"` thread-name prefix became `WORKPOOL_THREAD_NAME_PREFIX` (empty
   default).
 - `likely.h` dropped `#include "config.h"` and detects `__builtin_expect`
   directly; the CMake-generated `config.h` now carries only the pthread

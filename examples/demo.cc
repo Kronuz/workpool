@@ -1,7 +1,7 @@
-// A runnable tour of threadpool.
+// A runnable tour of workpool.
 //
 // Build (when this repo is the top-level project):
-//   cmake -B build && cmake --build build && ./build/threadpool_demo
+//   cmake -B build && cmake --build build && ./build/workpool_demo
 //
 // The one idea worth taking away: a WorkPool is a fixed set of long-lived, named worker
 // threads that many owners share. Each owner posts to its own WorkGroup, the pool serves the
@@ -28,7 +28,7 @@ static void rule(const char* title) {
 }
 
 int main() {
-	std::printf("threadpool demo  (hardware concurrency: %u)\n",
+	std::printf("workpool demo  (hardware concurrency: %u)\n",
 	            std::thread::hardware_concurrency());
 
 	// --- 1. the work really runs on N named worker threads -------------------

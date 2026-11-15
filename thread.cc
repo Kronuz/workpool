@@ -26,13 +26,13 @@
 #include "config.h"              // for HAVE_PTHREADS, HAVE_PTHREAD_SETNAME_NP
 
 // Tracing and thread registration are optional and fully injectable. Define
-// THREADPOOL_TRACE_HEADER (a header path) before compiling to plug in your own
-// L_EXC logging macro and THREADPOOL_THREAD_REGISTER hook; otherwise the bundled
-// no-op stubs in threadpool_trace.h are used. See threadpool_trace.h.
-#ifdef THREADPOOL_TRACE_HEADER
-#  include THREADPOOL_TRACE_HEADER
+// WORKPOOL_TRACE_HEADER (a header path) before compiling to plug in your own
+// L_EXC logging macro and WORKPOOL_THREAD_REGISTER hook; otherwise the bundled
+// no-op stubs in workpool_trace.h are used. See workpool_trace.h.
+#ifdef WORKPOOL_TRACE_HEADER
+#  include WORKPOOL_TRACE_HEADER
 #else
-#  include "threadpool_trace.h"
+#  include "workpool_trace.h"
 #endif
 
 #include <errno.h>               // for errno
@@ -51,9 +51,9 @@
 
 // Optional prefix prepended to OS-level thread names (what shows up in a
 // debugger / `top`). Empty by default; a consumer can set e.g.
-// -DTHREADPOOL_THREAD_NAME_PREFIX='"Xapiand:"' to recover the original naming.
-#ifndef THREADPOOL_THREAD_NAME_PREFIX
-#define THREADPOOL_THREAD_NAME_PREFIX ""
+// -DWORKPOOL_THREAD_NAME_PREFIX='"Xapiand:"' to recover the original naming.
+#ifndef WORKPOOL_THREAD_NAME_PREFIX
+#define WORKPOOL_THREAD_NAME_PREFIX ""
 #endif
 
 
@@ -111,7 +111,7 @@ teardown_thread(ThreadPolicyType)
 	// Xapiand maps this to traceback::deregister_thread. We intentionally leave
 	// the name in thread_names: get_thread_name may still be queried after the
 	// thread ends, and insert_or_assign self-heals on std::thread::id reuse.
-	THREADPOOL_THREAD_UNREGISTER();
+	WORKPOOL_THREAD_UNREGISTER();
 }
 
 
@@ -125,13 +125,13 @@ set_thread_name(const std::string& name)
 #if defined(HAVE_PTHREAD_SETNAME_NP) && defined(__APPLE__)
 	// Darwin's pthread_setname_np takes a single argument and names the calling
 	// thread only (there is no thread handle parameter).
-	pthread_setname_np((std::string(THREADPOOL_THREAD_NAME_PREFIX) + name).c_str());
+	pthread_setname_np((std::string(WORKPOOL_THREAD_NAME_PREFIX) + name).c_str());
 #elif defined(HAVE_PTHREAD_SETNAME_NP)
 	// Linux and FreeBSD (>= 12.2) expose the two-argument, Linux-compatible form.
-	pthread_setname_np(pthread, (std::string(THREADPOOL_THREAD_NAME_PREFIX) + name).c_str());
+	pthread_setname_np(pthread, (std::string(WORKPOOL_THREAD_NAME_PREFIX) + name).c_str());
 #elif defined(HAVE_PTHREAD_SET_NAME_NP)
 	// Historic BSD spelling: void pthread_set_name_np(thread, name).
-	pthread_set_name_np(pthread, (std::string(THREADPOOL_THREAD_NAME_PREFIX) + name).c_str());
+	pthread_set_name_np(pthread, (std::string(WORKPOOL_THREAD_NAME_PREFIX) + name).c_str());
 #endif
 	std::lock_guard<std::mutex> lk(thread_names_mutex);
 	// insert_or_assign, not emplace: the OS reuses std::thread::id values once a
@@ -140,7 +140,7 @@ set_thread_name(const std::string& name)
 	[[maybe_unused]] auto result = thread_names.insert_or_assign(std::this_thread::get_id(), name);
 	// Register the named thread so an external crash handler can dump per-thread
 	// callstacks. No-op by default; Xapiand maps this to init_thread_info.
-	THREADPOOL_THREAD_REGISTER(pthread, result.first->second.c_str());
+	WORKPOOL_THREAD_REGISTER(pthread, result.first->second.c_str());
 }
 
 

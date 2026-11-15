@@ -31,13 +31,13 @@
 // __has_builtin (and the GCC/Clang version check) detect it directly.
 #if defined(__has_builtin)
 #  if __has_builtin(__builtin_expect)
-#    define THREADPOOL_HAVE_BUILTIN_EXPECT 1
+#    define WORKPOOL_HAVE_BUILTIN_EXPECT 1
 #  endif
 #elif defined(__GNUC__)
-#  define THREADPOOL_HAVE_BUILTIN_EXPECT 1
+#  define WORKPOOL_HAVE_BUILTIN_EXPECT 1
 #endif
 
-#ifdef THREADPOOL_HAVE_BUILTIN_EXPECT
+#ifdef WORKPOOL_HAVE_BUILTIN_EXPECT
 #define likely(x) (__builtin_expect(!!(x), 1))
 #define unlikely(x) (__builtin_expect(!!(x), 0))
 #else

@@ -478,7 +478,7 @@ int main() {
 				// Destroyed as soon as the last item reports, while workers may still hold
 				// its tickets (fan-out put several on the rings).
 				while (ran.load(std::memory_order_acquire) < 32) {
-					threadpool_detail::cpu_relax();
+					workpool_detail::cpu_relax();
 				}
 				delete group;
 			}

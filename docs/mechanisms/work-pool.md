@@ -1,4 +1,4 @@
-> Status: CURRENT (2026-10-30) `WorkPool` at threadpool main `e961e44`; the design is the research note `docs/research/scheduler.md` (R1 to R3) and Xapiand `docs/design/phase7c.md` D4.
+> Status: CURRENT (2026-10-30) `WorkPool` at workpool main `e961e44`; the design is the research note `docs/research/scheduler.md` (R1 to R3) and Xapiand `docs/design/phase7c.md` D4.
 
 # WorkPool
 

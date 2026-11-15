@@ -1,15 +1,15 @@
-# threadpool
+# workpool
 
-Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a collection of small, reusable C++ libraries. Read its story in [The Pool and Its Parts](https://kronuz.github.io/blog/threadpool/), a Familiars post.
+Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a collection of small, reusable C++ libraries. Read its story in [The Pool and Its Parts](https://kronuz.github.io/blog/workpool/), a Familiars post.
 
-[![CI](https://github.com/Kronuz/threadpool/actions/workflows/ci.yml/badge.svg)](https://github.com/Kronuz/threadpool/actions/workflows/ci.yml)
+[![CI](https://github.com/Kronuz/workpool/actions/workflows/ci.yml/badge.svg)](https://github.com/Kronuz/workpool/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)
 
-Fixed-size thread pool for C++20: named workers, caller-owned work items and a fair
-multi-owner scheduler. `WorkPool` shares one set of named threads among thousands of
-owners, each a `WorkGroup`, with fair turns, latency classes, cancellation and waits
-scoped to one owner, and items that cost no allocation. Reach for it when a C++ service
+Work pool for C++20: one fixed set of named threads shared fairly by many owners, with
+caller-owned work items, latency classes, and waits and cancellation per owner. A thread
+pool runs tasks in arrival order; a work pool gives each owner its own lane and fair turns.
+`WorkPool` serves thousands of owners, each a `WorkGroup`, and its items cost no allocation. Reach for it when a C++ service
 needs background workers without pulling in a framework.
 
 ## ✨ Highlights
@@ -68,15 +68,15 @@ macOS (arm64, x86_64) and FreeBSD, plus ASan, UBSan and TSan builds.
 
 ```cmake
 include(FetchContent)
-FetchContent_Declare(threadpool
-  GIT_REPOSITORY https://github.com/Kronuz/threadpool.git
+FetchContent_Declare(workpool
+  GIT_REPOSITORY https://github.com/Kronuz/workpool.git
   GIT_TAG        f533782bf12dad200d4daf8c221ab1140ee91c47)  # or main, to track the tip
-FetchContent_MakeAvailable(threadpool)
+FetchContent_MakeAvailable(workpool)
 
-target_link_libraries(my_app PRIVATE threadpool::threadpool)
+target_link_libraries(my_app PRIVATE workpool::workpool)
 ```
 
-`threadpool::threadpool` is a small static library (it compiles `thread.cc`) that brings
+`workpool::workpool` is a small static library (it compiles `thread.cc`) that brings
 `Threads::Threads` with it. Include `work_pool.hh` (and `thread.hh` for the thread names).
 
 ## 🎯 When to use it
@@ -100,7 +100,7 @@ Not for:
 The design and its measurements are in
 [docs/research/scheduler.md](docs/research/scheduler.md) and
 [docs/mechanisms/work-pool.md](docs/mechanisms/work-pool.md). `bench/kernel_time.cc`
-(`-DTHREADPOOL_BUILD_BENCH=ON`) reports user time, kernel time and context switches per
+(`-DWORKPOOL_BUILD_BENCH=ON`) reports user time, kernel time and context switches per
 operation for a handoff, a burst, an idle pool and a timed sleep.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains the thread primitive, the rings, the turns
@@ -108,7 +108,7 @@ and the wake protocol.
 
 ## 📚 Documentation
 
-- [The Pool and Its Parts](https://kronuz.github.io/blog/threadpool/):
+- [The Pool and Its Parts](https://kronuz.github.io/blog/workpool/):
   the Familiars post on why it exists and how it works.
 - [docs/API.md](docs/API.md): `WorkPool`, `WorkGroup`, `WorkItem`, `Thread` and the free
   functions.
@@ -117,7 +117,7 @@ and the wake protocol.
 - [docs/mechanisms/work-pool.md](docs/mechanisms/work-pool.md): how `WorkPool` schedules.
 - [CHANGELOG.md](CHANGELOG.md): notable changes, with their measurements.
 - [AGENTS.md](AGENTS.md): repository map, invariants, traps, and how to plug in tracing.
-- [Catalog entry](https://github.com/Kronuz/cpp-libraries/blob/main/AGENTS.md#threadpool)
+- [Catalog entry](https://github.com/Kronuz/cpp-libraries/blob/main/AGENTS.md#workpool)
   in Kronuz C++ Libraries.
 
 ## 🛠️ Building and testing
@@ -128,7 +128,7 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-`./build/threadpool_demo` runs the tour. Add `-DTHREADPOOL_BUILD_BENCH=ON` to build the
+`./build/workpool_demo` runs the tour. Add `-DWORKPOOL_BUILD_BENCH=ON` to build the
 benchmarks.
 
 ## 🤝 Contributing

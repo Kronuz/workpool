@@ -1,4 +1,4 @@
-# threadpool API reference
+# workpool API reference
 
 ## `WorkPool`, `WorkGroup`, `WorkItem` (`work_pool.hh`)
 
@@ -157,18 +157,18 @@ crash-reporting header:
 
 - `L_EXC(...)` — logs an exception swallowed in a worker's join and in a task's
   catch-all (two sites). No-op by default.
-- `THREADPOOL_THREAD_REGISTER(pthread, name)` — called right after a thread is
+- `WORKPOOL_THREAD_REGISTER(pthread, name)` — called right after a thread is
   named, so an external crash handler can dump per-thread callstacks. No-op by
   default; this is the seam where Xapiand's `init_thread_info` plugs back in.
 
-The bundled `threadpool_trace.h` supplies both as `#ifndef`-guarded no-ops.
+The bundled `workpool_trace.h` supplies both as `#ifndef`-guarded no-ops.
 There are two ways to plug in real implementations:
 
-1. Point `THREADPOOL_TRACE_HEADER` at a header that defines them; the library
-   includes it instead of `threadpool_trace.h`:
+1. Point `WORKPOOL_TRACE_HEADER` at a header that defines them; the library
+   includes it instead of `workpool_trace.h`:
 
    ```sh
-   c++ -std=c++20 -DTHREADPOOL_TRACE_HEADER='"my_trace.h"' ...
+   c++ -std=c++20 -DWORKPOOL_TRACE_HEADER='"my_trace.h"' ...
    ```
 
 2. Define the macros before including the library headers.
@@ -179,11 +179,11 @@ Xapiand's own facilities:
 ```cpp
 #include "log.h"
 #include "traceback.h"
-#define THREADPOOL_THREAD_REGISTER(pthread, name) init_thread_info(pthread, name)
+#define WORKPOOL_THREAD_REGISTER(pthread, name) init_thread_info(pthread, name)
 // L_EXC comes from log.h
 ```
 
-One more optional knob: `THREADPOOL_THREAD_NAME_PREFIX` (a string, empty by
+One more optional knob: `WORKPOOL_THREAD_NAME_PREFIX` (a string, empty by
 default) is prepended to OS-level thread names. Set
-`-DTHREADPOOL_THREAD_NAME_PREFIX='"Xapiand:"'` to reproduce the original
+`-DWORKPOOL_THREAD_NAME_PREFIX='"Xapiand:"'` to reproduce the original
 `Xapiand:`-prefixed names.

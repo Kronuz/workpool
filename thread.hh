@@ -84,7 +84,7 @@ class Thread {
 			} catch(...) {} // set_exception() may throw too
 		}
 		// The thread is about to exit: release its crash registration (symmetric
-		// to setup_thread's THREADPOOL_THREAD_REGISTER). Both the normal and the
+		// to setup_thread's WORKPOOL_THREAD_REGISTER). Both the normal and the
 		// exception path converge here, so a single call covers both.
 		teardown_thread(thread_policy);
 		return nullptr;

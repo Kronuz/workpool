@@ -14,7 +14,7 @@ thread.cc                     The only .cc: run_thread/setup_thread/set_thread_n
 blocking_concurrent_queue.h   Mutex + condvar queue (not the pool's; kept for consumers). Header.
 concurrent_queue.h            Mutex + std::deque queue under BlockingConcurrentQueue (NOT lock-free). Header.
 likely.h                      likely/unlikely macros; self-contained (no config.h).
-threadpool_trace.h            No-op L_EXC + THREADPOOL_THREAD_REGISTER/UNREGISTER hooks (stands in for Xapiand's log.h/traceback.h).
+workpool_trace.h            No-op L_EXC + WORKPOOL_THREAD_REGISTER/UNREGISTER hooks (stands in for Xapiand's log.h/traceback.h).
 config.h.in                   CMake template for pthread feature macros; configured into build/config.h.
 test/thread_restart.cc        Thread<> restarts: run, join, run again; a failed run rethrown at the next run().
 test/work_counts.cc          WorkGroup::pending() and running().
@@ -23,12 +23,12 @@ test/work_group.cc            WorkGroup tests: fan-out, turns, width, weight, ca
 test/work_scheduling.cc       Merge aging, the caps under aging, parse-ahead beside an index, V2 child-group waits, the V5 guard.
 test/work_wait.cc             Waits: abort on a stack cycle, inversion, width, wake, resources, random acyclic graphs; on_idle.
 docs/mechanisms/work-pool.md  How WorkPool works, why, and what guards each invariant.
-bench/kernel_time.cc              User and kernel time and context switches per op for WorkPool and WorkGroup (THREADPOOL_BUILD_BENCH).
-CMakeLists.txt                STATIC library target `threadpool` (+ alias threadpool::threadpool) + the CTest tests.
+bench/kernel_time.cc              User and kernel time and context switches per op for WorkPool and WorkGroup (WORKPOOL_BUILD_BENCH).
+CMakeLists.txt                STATIC library target `workpool` (+ alias workpool::workpool) + the CTest tests.
 LICENSE                       MIT, Copyright (c) 2015-2019 Dubalu LLC.
 README.md                     What it is, install, quick start.
 docs/API.md                   The API reference and the tracing hooks.
-examples/demo.cc              A runnable tour (target threadpool_demo).
+examples/demo.cc              A runnable tour (target workpool_demo).
 ARCHITECTURE.md               Internal design, concurrency model, trade-offs.
 ```
 
@@ -47,7 +47,7 @@ Or directly (you must compile `thread.cc` too, it is not header-only):
 c++ -std=c++20 -I. -Ibuild test/work_group.cc thread.cc -o test/work_group -pthread && ./test/work_group
 ```
 
-The CMake `threadpool` target is a `STATIC` library that requests `cxx_std_20`, links
+The CMake `workpool` target is a `STATIC` library that requests `cxx_std_20`, links
 `Threads::Threads`, and exposes both the source dir and the generated-config dir
 as `PUBLIC` includes. Each `test/*.cc` is its own CTest test.
 
@@ -60,12 +60,12 @@ as `PUBLIC` includes. Each `test/*.cc` is its own CTest test.
   `strings.hh`, `traceback.h`) back; that is exactly what the trace hooks and
   `std::format` replaced.
 - **Tracing and thread registration flow through two injectable hooks**, both
-  no-ops by default: `L_EXC(...)` and `THREADPOOL_THREAD_REGISTER(pthread, name)`.
-  Defaults live in `threadpool_trace.h`, each `#ifndef`-guarded. Both
+  no-ops by default: `L_EXC(...)` and `WORKPOOL_THREAD_REGISTER(pthread, name)`.
+  Defaults live in `workpool_trace.h`, each `#ifndef`-guarded. Both
   `work_pool.hh` and `thread.cc` reach them through
-  `#ifdef THREADPOOL_TRACE_HEADER` (include the consumer's header) `#else`
-  (include `threadpool_trace.h`). A consumer injects its own via
-  `-DTHREADPOOL_TRACE_HEADER='"my_trace.h"'`, or defines the macros first. Keep
+  `#ifdef WORKPOOL_TRACE_HEADER` (include the consumer's header) `#else`
+  (include `workpool_trace.h`). A consumer injects its own via
+  `-DWORKPOOL_TRACE_HEADER='"my_trace.h"'`, or defines the macros first. Keep
   any new trace/registration call behind these macros; never assume they do
   anything.
 - **`config.h` is for pthread feature macros only** (`HAVE_PTHREADS`,
@@ -108,9 +108,9 @@ as `PUBLIC` includes. Each `test/*.cc` is its own CTest test.
   `setup_thread` (`thread.cc`) — e.g. set affinity or priority per policy. Call
   sites and the template signatures stay exactly as they are.
 - **Plug in tracing / crash registration.** Inject a trace header with
-  `-DTHREADPOOL_TRACE_HEADER='"my_trace.h"'` that defines `L_EXC` and
-  `THREADPOOL_THREAD_REGISTER`, or define them before including the headers. To
-  recover Xapiand's behavior, map `THREADPOOL_THREAD_REGISTER` to
+  `-DWORKPOOL_TRACE_HEADER='"my_trace.h"'` that defines `L_EXC` and
+  `WORKPOOL_THREAD_REGISTER`, or define them before including the headers. To
+  recover Xapiand's behavior, map `WORKPOOL_THREAD_REGISTER` to
   `init_thread_info` and `L_EXC` to `log.h`'s macro.
 - **Always extend the tests.** The `test/work_*.cc` files cover `WorkPool` and
   `WorkGroup`, and `test/mutants.sh` pins the counters with mutants. Any behavioral
@@ -139,8 +139,8 @@ This is a standalone extraction from
 decoupling:
 
 - `thread.cc` dropped `#include "traceback.h"`; the `init_thread_info(...)` call
-  became `THREADPOOL_THREAD_REGISTER(...)` (no-op by default). The hardcoded
-  `"Xapiand:"` name prefix became the `THREADPOOL_THREAD_NAME_PREFIX` macro
+  became `WORKPOOL_THREAD_REGISTER(...)` (no-op by default). The hardcoded
+  `"Xapiand:"` name prefix became the `WORKPOOL_THREAD_NAME_PREFIX` macro
   (empty by default).
 - `likely.h` dropped `#include "config.h"` and detects `__builtin_expect`
   directly; `config.h` is now CMake-generated and carries only the pthread

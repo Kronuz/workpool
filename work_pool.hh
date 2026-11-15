@@ -45,10 +45,10 @@
 
 #include "thread.hh"             // for Thread, ThreadPolicyType
 
-#ifdef THREADPOOL_TRACE_HEADER
-#  include THREADPOOL_TRACE_HEADER
+#ifdef WORKPOOL_TRACE_HEADER
+#  include WORKPOOL_TRACE_HEADER
 #else
-#  include "threadpool_trace.h"
+#  include "workpool_trace.h"
 #endif
 
 #if defined(__linux__)
@@ -62,7 +62,7 @@
 #  if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 140400
 #    include <os/clock.h>        // for OS_CLOCK_MACH_ABSOLUTE_TIME
 #    include <os/os_sync_wait_on_address.h>
-#    define THREADPOOL_OS_SYNC 1
+#    define WORKPOOL_OS_SYNC 1
 #  else
 extern "C" int __ulock_wait(std::uint32_t operation, void* addr, std::uint64_t value, std::uint32_t timeout_us);
 extern "C" int __ulock_wake(std::uint32_t operation, void* addr, std::uint64_t wake_value);
@@ -108,14 +108,14 @@ struct WorkIdle {
 };
 
 
-namespace threadpool_detail {
+namespace workpool_detail {
 
 // The platform futex on a 32-bit word: Linux futex(2), macOS os_sync_wait_on_address (or
 // __ulock before 14.4), FreeBSD _umtx_op, else C++20 atomic wait. Spurious returns allowed.
 inline void futex_wait(std::atomic<std::uint32_t>* addr, std::uint32_t expected) noexcept {
 #if defined(__linux__)
 	syscall(SYS_futex, addr, FUTEX_WAIT_PRIVATE, expected, nullptr, nullptr, 0);
-#elif defined(__APPLE__) && defined(THREADPOOL_OS_SYNC)
+#elif defined(__APPLE__) && defined(WORKPOOL_OS_SYNC)
 	os_sync_wait_on_address(addr, expected, sizeof(std::uint32_t), OS_SYNC_WAIT_ON_ADDRESS_NONE);
 #elif defined(__APPLE__)
 	__ulock_wait(1 /* UL_COMPARE_AND_WAIT */ | 0x01000000 /* ULF_NO_ERRNO */, addr, expected, 0);
@@ -131,7 +131,7 @@ inline void futex_wait_for(std::atomic<std::uint32_t>* addr, std::uint32_t expec
 #if defined(__linux__)
 	timespec ts{static_cast<time_t>(ns / 1'000'000'000u), static_cast<long>(ns % 1'000'000'000u)};
 	syscall(SYS_futex, addr, FUTEX_WAIT_PRIVATE, expected, &ts, nullptr, 0);
-#elif defined(__APPLE__) && defined(THREADPOOL_OS_SYNC)
+#elif defined(__APPLE__) && defined(WORKPOOL_OS_SYNC)
 	os_sync_wait_on_address_with_timeout(addr, expected, sizeof(std::uint32_t), OS_SYNC_WAIT_ON_ADDRESS_NONE, OS_CLOCK_MACH_ABSOLUTE_TIME, ns);
 #elif defined(__APPLE__)
 	auto us = ns / 1000 + 1;
@@ -153,7 +153,7 @@ inline void futex_wait_for(std::atomic<std::uint32_t>* addr, std::uint32_t expec
 inline void futex_wake_one(std::atomic<std::uint32_t>* addr) noexcept {
 #if defined(__linux__)
 	syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0);
-#elif defined(__APPLE__) && defined(THREADPOOL_OS_SYNC)
+#elif defined(__APPLE__) && defined(WORKPOOL_OS_SYNC)
 	os_sync_wake_by_address_any(addr, sizeof(std::uint32_t), OS_SYNC_WAKE_BY_ADDRESS_NONE);
 #elif defined(__APPLE__)
 	__ulock_wake(1 | 0x01000000, addr, 0);
@@ -167,7 +167,7 @@ inline void futex_wake_one(std::atomic<std::uint32_t>* addr) noexcept {
 inline void futex_wake_all(std::atomic<std::uint32_t>* addr) noexcept {
 #if defined(__linux__)
 	syscall(SYS_futex, addr, FUTEX_WAKE_PRIVATE, INT_MAX, nullptr, nullptr, 0);
-#elif defined(__APPLE__) && defined(THREADPOOL_OS_SYNC)
+#elif defined(__APPLE__) && defined(WORKPOOL_OS_SYNC)
 	os_sync_wake_by_address_all(addr, sizeof(std::uint32_t), OS_SYNC_WAKE_BY_ADDRESS_NONE);
 #elif defined(__APPLE__)
 	__ulock_wake(1 | 0x01000000 | 0x00000100 /* ULF_WAKE_ALL */, addr, 0);
@@ -705,7 +705,7 @@ public:
 	const std::string& name() const noexcept { return _name; }
 };
 
-}  // namespace threadpool_detail
+}  // namespace workpool_detail
 
 
 // A fixed set of named workers shared by many WorkGroups. Items run in class order,
@@ -713,10 +713,10 @@ public:
 // waits for a long item to end, and merges hold at most `merge_cap` workers. Idle workers
 // park on a futex each and use no CPU; post() never blocks or allocates.
 class WorkPool {
-	friend threadpool_detail::WorkPoolWorker;
+	friend workpool_detail::WorkPoolWorker;
 	friend WorkGroup;
-	using GroupState = threadpool_detail::GroupState;
-	using Lane = threadpool_detail::Lane;
+	using GroupState = workpool_detail::GroupState;
+	using Lane = workpool_detail::Lane;
 	static constexpr unsigned query = static_cast<unsigned>(WorkClass::query);
 	static constexpr unsigned flush = static_cast<unsigned>(WorkClass::flush);
 	static constexpr unsigned merge = static_cast<unsigned>(WorkClass::merge);
@@ -743,8 +743,8 @@ private:
 	std::int64_t _quantum;             // in ticks
 	std::int64_t _merge_age;           // in ticks; 0: merges do not age
 	void (*_block_guard)(const char*) noexcept;
-	threadpool_detail::Idle _idle;
-	threadpool_detail::ReadyRing _ready[threadpool_detail::classes];
+	workpool_detail::Idle _idle;
+	workpool_detail::ReadyRing _ready[workpool_detail::classes];
 	std::atomic<bool> _stop{false};
 	alignas(64) std::atomic<unsigned> _busy_bg{0};     // workers in flush or merge turns
 	alignas(64) std::atomic<unsigned> _busy_merge{0};  // workers in merge turns
@@ -753,7 +753,7 @@ private:
 	alignas(64) std::atomic<std::uint32_t> _group_wake{0};  // WorkGroup::wait()'s futex word
 	GroupState _own;                   // items posted without a group
 
-	std::vector<std::unique_ptr<threadpool_detail::WorkPoolWorker>> _workers;
+	std::vector<std::unique_ptr<workpool_detail::WorkPoolWorker>> _workers;
 
 	static unsigned resolve(unsigned threads) noexcept {
 		if (threads) {
@@ -838,7 +838,7 @@ private:
 
 	[[gnu::noinline]] void release_slow(GroupState* s, unsigned c, bool push, bool wake, bool free) noexcept {
 		// A merge entry is stamped for aging; the clock is read only for merges.
-		auto stamp = c == merge ? std::max<std::uint64_t>(threadpool_detail::ticks(), 1) : 0;
+		auto stamp = c == merge ? std::max<std::uint64_t>(workpool_detail::ticks(), 1) : 0;
 		if (push) {
 			_ready[c].push(s, stamp);
 		}
@@ -846,7 +846,7 @@ private:
 			_idle.notify_one();
 		}
 		if (wake) {
-			threadpool_detail::futex_wake_all(&_group_wake);
+			workpool_detail::futex_wake_all(&_group_wake);
 		}
 		if (free) {
 			delete s;
@@ -855,8 +855,8 @@ private:
 	}
 
 	// `here` is this thread's tls_here, resolved once by the caller (per turn, not per item).
-	static void run_item(threadpool_detail::Here& here, GroupState& s, WorkItem* item) noexcept {
-		threadpool_detail::Frame frame{&s, item, here.top};
+	static void run_item(workpool_detail::Here& here, GroupState& s, WorkItem* item) noexcept {
+		workpool_detail::Frame frame{&s, item, here.top};
 		here.top = &frame;
 		item->run(item);
 		here.top = frame.parent;
@@ -869,8 +869,8 @@ private:
 		Lane& l = s.lanes[c];
 		std::int64_t budget = l.deficit + _quantum * s.weight;
 		l.deficit = 0;
-		auto& here = threadpool_detail::tls_here;
-		auto t = threadpool_detail::ticks();
+		auto& here = workpool_detail::tls_here;
+		auto t = workpool_detail::ticks();
 		bool first = true;
 		while (budget > 0) {
 			WorkItem* item = l.pop();
@@ -889,7 +889,7 @@ private:
 				release(&s, c, true, false, false);
 			}
 			run_item(here, s, item);
-			auto now = threadpool_detail::ticks();
+			auto now = workpool_detail::ticks();
 			budget -= static_cast<std::int64_t>(now - t);
 			t = now;
 			s.mu.lock();
@@ -948,7 +948,7 @@ private:
 	// items while fewer than `width` turns of it are being served (tickets still on the ring
 	// do not count).
 	static int helpable(const GroupState& s) noexcept {
-		for (unsigned c = 0; c < threadpool_detail::classes; ++c) {
+		for (unsigned c = 0; c < workpool_detail::classes; ++c) {
 			const auto& l = s.lanes[c];
 			if (l.pending && (!s.width || l.tickets - l.listed + l.helpers < s.width)) {
 				return static_cast<int>(c);
@@ -985,7 +985,7 @@ private:
 			return false;
 		}
 		auto stamp = _ready[merge].head_stamp();
-		return stamp && static_cast<std::int64_t>(threadpool_detail::ticks() - stamp) > _merge_age;
+		return stamp && static_cast<std::int64_t>(workpool_detail::ticks() - stamp) > _merge_age;
 	}
 
 	// The next merge entry if a merge slot (at most _merge_cap) is free, else null.
@@ -1090,7 +1090,7 @@ private:
 	}
 
 	void work(unsigned idx) noexcept {
-		threadpool_detail::tls_here.pool = this;
+		workpool_detail::tls_here.pool = this;
 		bool searching = false;
 		Slots held;
 		for (;;) {
@@ -1116,7 +1116,7 @@ private:
 				break;
 			}
 		}
-		threadpool_detail::tls_here.pool = nullptr;
+		workpool_detail::tls_here.pool = nullptr;
 	}
 
 	void stop_and_join() noexcept {
@@ -1139,8 +1139,8 @@ public:
 		_n(resolve(options.threads)),
 		_bg_cap(_n - (options.reserve < _n ? options.reserve : _n - 1)),
 		_merge_cap(options.merge_cap && options.merge_cap < _bg_cap ? options.merge_cap : _bg_cap),
-		_quantum(static_cast<std::int64_t>(double(options.quantum.count()) * threadpool_detail::ticks_per_ns())),
-		_merge_age(options.merge_age.count() > 0 ? std::max<std::int64_t>(1, static_cast<std::int64_t>(double(options.merge_age.count()) * threadpool_detail::ticks_per_ns())) : 0),
+		_quantum(static_cast<std::int64_t>(double(options.quantum.count()) * workpool_detail::ticks_per_ns())),
+		_merge_age(options.merge_age.count() > 0 ? std::max<std::int64_t>(1, static_cast<std::int64_t>(double(options.merge_age.count()) * workpool_detail::ticks_per_ns())) : 0),
 		_block_guard(options.block_guard),
 		_idle(_n) {
 		if (_quantum < 1) {
@@ -1150,7 +1150,7 @@ public:
 		_workers.reserve(_n);
 		try {
 			for (unsigned idx = 0; idx < _n; ++idx) {
-				_workers.push_back(std::make_unique<threadpool_detail::WorkPoolWorker>(this, idx, std::vformat(options.name_format, std::make_format_args(idx))));
+				_workers.push_back(std::make_unique<workpool_detail::WorkPoolWorker>(this, idx, std::vformat(options.name_format, std::make_format_args(idx))));
 				_workers.back()->run();
 			}
 		} catch (...) {
@@ -1170,7 +1170,7 @@ public:
 
 	unsigned threads() const noexcept { return _n; }
 
-	bool on_worker() const noexcept { return threadpool_detail::tls_here.pool == this; }
+	bool on_worker() const noexcept { return workpool_detail::tls_here.pool == this; }
 
 	// Merge entries waiting for a worker now (approximate), for a backlog report.
 	std::size_t merge_waiting() const noexcept { return _ready[merge].size(); }
@@ -1181,8 +1181,8 @@ public:
 		if (!stamp) {
 			return {};
 		}
-		auto waited = static_cast<std::int64_t>(threadpool_detail::ticks() - stamp);
-		return std::chrono::nanoseconds(waited > 0 ? static_cast<std::int64_t>(double(waited) / threadpool_detail::ticks_per_ns()) : 0);
+		auto waited = static_cast<std::int64_t>(workpool_detail::ticks() - stamp);
+		return std::chrono::nanoseconds(waited > 0 ? static_cast<std::int64_t>(double(waited) / workpool_detail::ticks_per_ns()) : 0);
 	}
 
 	// Merge turns taken ahead of flush because they were older than merge_age.
@@ -1192,7 +1192,7 @@ public:
 	// thread; never blocks, never allocates.
 	void post(WorkItem& item) noexcept {
 		GroupState& s = state_of(item);
-		unsigned c = threadpool_detail::class_of(item);
+		unsigned c = workpool_detail::class_of(item);
 		Lane& l = s.lanes[c];
 		s.mu.lock();
 		l.push(&item);
@@ -1218,13 +1218,13 @@ public:
 class WorkGroup {
 	friend WorkPool;
 	friend WorkItem;
-	using GroupState = threadpool_detail::GroupState;
+	using GroupState = workpool_detail::GroupState;
 
 	WorkPool* _pool;
 	GroupState* _s;
 
 	template <typename F>
-	struct Box final : threadpool_detail::BoxedItem {
+	struct Box final : workpool_detail::BoxedItem {
 		F fn;
 
 		explicit Box(F&& f) :
@@ -1251,8 +1251,8 @@ class WorkGroup {
 
 	// A wait on a group with an item on this thread's stack can only wait for itself.
 	void check_stack(const char* site) const noexcept {
-		if (threadpool_detail::tls_here.find(_s)) {
-			std::fprintf(stderr, "threadpool: %s on a group that has an item on this thread's stack (a wait inside its own group, or a cycle of waits); post the work to a child group and wait on that\n", site);
+		if (workpool_detail::tls_here.find(_s)) {
+			std::fprintf(stderr, "workpool: %s on a group that has an item on this thread's stack (a wait inside its own group, or a cycle of waits); post the work to a child group and wait on that\n", site);
 			std::abort();
 		}
 	}
@@ -1280,7 +1280,7 @@ class WorkGroup {
 		bool wake = _pool->waiters_due(*_s);
 		WorkIdle* notify = WorkPool::take_idle(*_s);
 		_s->mu.unlock();
-		threadpool_detail::futex_wake_all(&_s->sleep);
+		workpool_detail::futex_wake_all(&_s->sleep);
 		// Boxed items are freed before the group's waiters and idle nodes hear it is idle.
 		WorkItem* owned = nullptr;
 		WorkItem** keep = &owned;
@@ -1288,8 +1288,8 @@ class WorkGroup {
 		for (WorkItem* item = list; item;) {
 			WorkItem* next = item->next;
 			++dropped;
-			if (item->flags & threadpool_detail::item_boxed) {
-				auto* box = static_cast<threadpool_detail::BoxedItem*>(item);
+			if (item->flags & workpool_detail::item_boxed) {
+				auto* box = static_cast<workpool_detail::BoxedItem*>(item);
 				box->destroy(box);
 			} else {
 				*keep = item;
@@ -1299,7 +1299,7 @@ class WorkGroup {
 		}
 		*keep = nullptr;
 		if (wake) {
-			threadpool_detail::futex_wake_all(&_pool->_group_wake);
+			workpool_detail::futex_wake_all(&_pool->_group_wake);
 		}
 		WorkPool::fire_idle(notify);
 		return owned;
@@ -1363,7 +1363,7 @@ public:
 		box->run = &Box<F>::invoke;
 		box->destroy = &Box<F>::drop;
 		box->cls = cls;
-		box->flags = threadpool_detail::item_boxed;
+		box->flags = workpool_detail::item_boxed;
 		post(*box);
 		return true;
 	}
@@ -1407,7 +1407,7 @@ public:
 			}
 			++s->waiters;
 			s->mu.unlock();
-			threadpool_detail::futex_wait(&pool._group_wake, word);
+			workpool_detail::futex_wait(&pool._group_wake, word);
 			s->mu.lock();
 			--s->waiters;
 			s->mu.unlock();
@@ -1474,7 +1474,7 @@ public:
 
 	// Whether the item running on this thread belongs to this group and saw a cancel.
 	bool stop_requested() const noexcept {
-		auto* frame = threadpool_detail::tls_here.find(_s);
+		auto* frame = workpool_detail::tls_here.find(_s);
 		return frame && frame->item->stop_requested();
 	}
 
@@ -1510,7 +1510,7 @@ inline bool
 WorkPool::sleep_until(std::chrono::steady_clock::time_point deadline, WorkGroup& group) noexcept
 {
 	GroupState* s = group._s;
-	auto* frame = threadpool_detail::tls_here.find(s);
+	auto* frame = workpool_detail::tls_here.find(s);
 	auto started = frame ? frame->item->epoch : s->epoch.load(std::memory_order_relaxed);
 	for (;;) {
 		// acquire: pairs with cancel()'s release of the word, so a new word means a new epoch.
@@ -1523,13 +1523,13 @@ WorkPool::sleep_until(std::chrono::steady_clock::time_point deadline, WorkGroup&
 			return true;
 		}
 		auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(deadline - now).count();
-		threadpool_detail::futex_wait_for(&s->sleep, word, static_cast<std::uint64_t>(ns));
+		workpool_detail::futex_wait_for(&s->sleep, word, static_cast<std::uint64_t>(ns));
 	}
 }
 
 
 inline void
-threadpool_detail::WorkPoolWorker::operator()()
+workpool_detail::WorkPoolWorker::operator()()
 {
 	_pool->work(_idx);
 }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(threadpool LANGUAGES CXX)
+project(workpool LANGUAGES CXX)
 
 include(CheckCXXSourceCompiles)
 include(CheckIncludeFileCXX)
@@ -53,52 +53,52 @@ configure_file(
 # A small static library carrying thread.cc, plus the public headers. Consumers
 # get both the source dir (for the headers) and the binary dir (for the
 # generated config.h) on their include path.
-add_library(threadpool STATIC thread.cc)
-target_include_directories(threadpool PUBLIC
+add_library(workpool STATIC thread.cc)
+target_include_directories(workpool PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_CURRENT_BINARY_DIR}")
-target_compile_features(threadpool PUBLIC cxx_std_20)
-target_link_libraries(threadpool PUBLIC Threads::Threads)
-# Alias so consumers can link `threadpool::threadpool` whether they add this via
+target_compile_features(workpool PUBLIC cxx_std_20)
+target_link_libraries(workpool PUBLIC Threads::Threads)
+# Alias so consumers can link `workpool::workpool` whether they add this via
 # add_subdirectory or FetchContent.
-add_library(threadpool::threadpool ALIAS threadpool)
+add_library(workpool::workpool ALIAS workpool)
 
 # Only build the test when this repo is the top-level project, so consumers
 # (e.g. via FetchContent) don't build our tests.
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   enable_testing()
   add_executable(thread_restart_test test/thread_restart.cc)
-  target_link_libraries(thread_restart_test PRIVATE threadpool)
+  target_link_libraries(thread_restart_test PRIVATE workpool)
   add_test(NAME thread_restart COMMAND thread_restart_test)
 
   add_executable(work_pool_test test/work_pool.cc)
-  target_link_libraries(work_pool_test PRIVATE threadpool)
+  target_link_libraries(work_pool_test PRIVATE workpool)
   add_test(NAME work_pool COMMAND work_pool_test)
 
   add_executable(work_group_test test/work_group.cc)
-  target_link_libraries(work_group_test PRIVATE threadpool)
+  target_link_libraries(work_group_test PRIVATE workpool)
   add_test(NAME work_group COMMAND work_group_test)
 
   add_executable(work_counts_test test/work_counts.cc)
-  target_link_libraries(work_counts_test PRIVATE threadpool)
+  target_link_libraries(work_counts_test PRIVATE workpool)
   add_test(NAME work_counts COMMAND work_counts_test)
 
   add_executable(work_scheduling_test test/work_scheduling.cc)
-  target_link_libraries(work_scheduling_test PRIVATE threadpool)
+  target_link_libraries(work_scheduling_test PRIVATE workpool)
   add_test(NAME work_scheduling COMMAND work_scheduling_test)
 
   add_executable(work_wait_test test/work_wait.cc)
-  target_link_libraries(work_wait_test PRIVATE threadpool)
+  target_link_libraries(work_wait_test PRIVATE workpool)
   add_test(NAME work_wait COMMAND work_wait_test)
 
-  # Benchmarks (not tests): -DTHREADPOOL_BUILD_BENCH=ON builds them; see bench/.
-  option(THREADPOOL_BUILD_BENCH "Build the benchmarks" OFF)
-  if(THREADPOOL_BUILD_BENCH)
+  # Benchmarks (not tests): -DWORKPOOL_BUILD_BENCH=ON builds them; see bench/.
+  option(WORKPOOL_BUILD_BENCH "Build the benchmarks" OFF)
+  if(WORKPOOL_BUILD_BENCH)
     add_executable(kernel_time bench/kernel_time.cc)
-    target_link_libraries(kernel_time PRIVATE threadpool)
+    target_link_libraries(kernel_time PRIVATE workpool)
   endif()
 
-  # A runnable tour of the library (not a test): build & run ./build/threadpool_demo
-  add_executable(threadpool_demo examples/demo.cc)
-  target_link_libraries(threadpool_demo PRIVATE threadpool)
+  # A runnable tour of the library (not a test): build & run ./build/workpool_demo
+  add_executable(workpool_demo examples/demo.cc)
+  target_link_libraries(workpool_demo PRIVATE workpool)
 endif()

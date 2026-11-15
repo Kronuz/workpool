@@ -1,10 +1,20 @@
 # Changelog
 
-All notable changes to `threadpool`. The format follows
+All notable changes to `workpool` (named `threadpool` until 2026-11-15). The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the library has no
 releases, so entries are dated.
 
 Upgrading a pin from before 2026-10-30: [the consumer upgrade note](https://github.com/Kronuz/cpp-libraries/blob/main/docs/UPGRADING-2026-10.md#threadpool) lists what changes for callers, how to find affected inputs, the commits not to pin, and the speedup.
+
+## 2026-11-15
+
+### Changed
+- The library is `workpool`: the repository (github.com/Kronuz/workpool), the CMake project and
+  target (`workpool`, alias `workpool::workpool`), the options (`WORKPOOL_BUILD_BENCH`), the hook
+  macros (`WORKPOOL_TRACE_HEADER`, `WORKPOOL_THREAD_REGISTER`, `WORKPOOL_THREAD_UNREGISTER`,
+  `WORKPOOL_THREAD_NAME_PREFIX`), the trace header (`workpool_trace.h`) and `workpool_detail`.
+  No alias keeps the old names; callers move to the new ones. Entries below keep the names they
+  had when written.
 
 ## 2026-11-02
 
