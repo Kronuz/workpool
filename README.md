@@ -108,6 +108,8 @@ and the wake protocol.
 
 ## 📚 Documentation
 
+- [The Pool and Its Parts](https://kronuz.github.io/blog/threadpool/):
+  the Familiars post on why it exists and how it works.
 - [docs/API.md](docs/API.md): `WorkPool`, `WorkGroup`, `WorkItem`, `Thread` and the free
   functions.
 - [ARCHITECTURE.md](ARCHITECTURE.md): the thread primitive, `WorkPool`'s rings, turns,
