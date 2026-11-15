@@ -1,6 +1,6 @@
 # workpool
 
-Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a collection of small, reusable C++ libraries. Read its story in [The Pool and Its Parts](https://kronuz.github.io/blog/workpool/), a Familiars post.
+Part of [Kronuz C++ Libraries](https://github.com/Kronuz/cpp-libraries), a collection of small, reusable C++ libraries. Read its story in [Work, Not Threads](https://kronuz.github.io/blog/workpool/), a Familiars post.
 
 [![CI](https://github.com/Kronuz/workpool/actions/workflows/ci.yml/badge.svg)](https://github.com/Kronuz/workpool/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -108,7 +108,7 @@ and the wake protocol.
 
 ## 📚 Documentation
 
-- [The Pool and Its Parts](https://kronuz.github.io/blog/workpool/):
+- [Work, Not Threads](https://kronuz.github.io/blog/workpool/):
   the Familiars post on why it exists and how it works.
 - [docs/API.md](docs/API.md): `WorkPool`, `WorkGroup`, `WorkItem`, `Thread` and the free
   functions.
