@@ -50,6 +50,8 @@ run "pending() counts only the query lane" work_pool.hh \
 	"std::size_t n = _s->pending();" "std::size_t n = _s->lanes[0].pending;" test/work_counts.cc
 run "running() reports the queued count" work_pool.hh \
 	"std::size_t n = _s->running;" "std::size_t n = _s->pending();" test/work_counts.cc
+run "turn ignores the group's weight" work_pool.hh \
+	"l.deficit + _quantum * s.weight;" "l.deficit + _quantum;" test/work_group.cc
 
 if [ "$survived" -ne 0 ]; then
 	echo "some mutants survived"
