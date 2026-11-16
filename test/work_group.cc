@@ -1,6 +1,7 @@
 // Tests for WorkGroup: fan-out, turns, width, weight, cancel, helping waits, the destructor
 // (also from its own item), sleep_until, groups opening under load, and the classes.
 // Build: c++ -std=c++20 -I.. work_group.cc ../thread.cc -o work_group && ./work_group
+#undef NDEBUG  // the checks run in every build: several carry the wait they check
 #include <atomic>
 #include <cassert>
 #include <chrono>

@@ -2,6 +2,7 @@
 // index's, the reserve under aging, the backlog report, waits that cannot deadlock (V2), and
 // the block guard (V5). Each hang is a watchdog abort, not a stuck run.
 // Build: c++ -std=c++20 -I.. work_scheduling.cc ../thread.cc -o work_scheduling && ./work_scheduling
+#undef NDEBUG  // the checks run in every build: several carry the wait they check
 #include <atomic>
 #include <cassert>
 #include <chrono>

@@ -125,6 +125,8 @@ as `PUBLIC` includes. Each `test/*.cc` is its own CTest test.
   purpose so the headers work without the CMake-generated config.
 - **Don't add Xapiand headers back.** `log.h`, `strings.hh`, `traceback.h` were
   the whole point of the extraction. Route through the hooks and `std::format`.
+- **Keep `#undef NDEBUG` atop each test.** Several asserts carry the wait they check;
+  without it a Release build skips the waits and the tests hang or crash.
 - **Compile `thread.cc`.** It is the one translation unit; forgetting it gives
   link errors for `set_thread_name`/`run_thread`/`sched_getcpu`.
 - **`sched_getcpu` is macOS-only here.** On Linux glibc already provides it; the

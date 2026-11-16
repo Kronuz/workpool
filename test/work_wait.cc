@@ -3,6 +3,7 @@
 // woken when the group goes idle, and waits on lower groups of an acyclic graph always end.
 // Each hang is a watchdog abort, not a stuck run.
 // Build: c++ -std=c++20 -I.. work_wait.cc ../thread.cc -o work_wait && ./work_wait
+#undef NDEBUG  // the checks run in every build: several carry the wait they check
 #include <atomic>
 #include <cassert>
 #include <chrono>

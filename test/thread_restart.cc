@@ -2,6 +2,7 @@
 // ended without a join joins it first, and rethrows what it threw; run while running is a
 // no-op.
 // Run under TSan as well: the restart must not race the previous runner's promise.
+#undef NDEBUG  // the checks run in every build: several carry the wait they check
 #include <atomic>
 #include <cassert>
 #include <chrono>

@@ -6,6 +6,15 @@ releases, so entries are dated.
 
 Upgrading a pin from before 2026-10-30: [the consumer upgrade note](https://github.com/Kronuz/cpp-libraries/blob/main/docs/UPGRADING-2026-10.md#threadpool) lists what changes for callers, how to find affected inputs, the commits not to pin, and the speedup.
 
+## 2026-11-16
+
+### Fixed
+- The tests keep their asserts in a Release (`-DNDEBUG`) build. Several asserts carry the wait
+  they check (`assert(wait_for(...))`, `assert(g.cancel_idle(b))`), so under `NDEBUG`
+  `work_wait`'s on_idle block returned with a stack node still linked and hung or crashed in
+  the group's destructor; the library was not at fault. CI builds without `NDEBUG`, so only
+  local Release builds showed it.
+
 ## 2026-11-15
 
 ### Changed

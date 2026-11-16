@@ -1,6 +1,7 @@
 // Tests for WorkPool: every item runs once, reposts from workers, a worker waiting on a child group, the draining
 // destructor, idle CPU, and a ping-pong that hangs on a lost wakeup.
 // Build: c++ -std=c++20 -I.. work_pool.cc ../thread.cc -o work_pool && ./work_pool
+#undef NDEBUG  // the checks run in every build: several carry the wait they check
 #include <atomic>
 #include <cassert>
 #include <chrono>
