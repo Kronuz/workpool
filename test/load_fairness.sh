@@ -7,7 +7,7 @@ RUNS=${2:-50}
 HOGS=${3:-$(( $(getconf _NPROCESSORS_ONLN) * 2 ))}
 CXX=${CXX:-c++}
 W=$(mktemp -d)
-mkdir "$W/inc" && sed -E 's/^#cmakedefine (HAVE_PTHREADS) .*/#define \1 1/' config.h.in >"$W/inc/config.h"
+mkdir "$W/inc" && sed -E 's/^#cmakedefine (HAVE_PTHREADS) .*/#define \1 1/; /^#cmakedefine/d' config.h.in >"$W/inc/config.h"
 $CXX -std=c++20 -O1 -I"$W/inc" -I. -Itest "$SRC" thread.cc -o "$W/bin" -pthread || exit 2
 pids=()
 for ((i = 0; i < HOGS; ++i)); do (while :; do :; done) & pids+=($!); done
