@@ -2,7 +2,9 @@
 
 This document describes the internal design of `workpool`: the thread primitive, the
 `WorkPool` that runs on it, the concurrency model, and the trade-offs baked in. File
-references point at `work_pool.hh` unless noted otherwise.
+references point at `work_pool.hh` unless noted otherwise. `work_pool.hh` includes its
+pieces `work_pool_sync.hh` (futex, spinlock), `work_pool_idle.hh` (parking, idle protocol) and
+`work_pool_ready_ring.hh` (the ready ring); `docs/source-layout.md` says what each holds.
 
 ## Overview
 

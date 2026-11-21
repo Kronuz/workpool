@@ -8,7 +8,7 @@ easy to fall into.
 ## Repo map
 
 ```
-work_pool.hh                  WorkPool/WorkGroup/WorkItem: the many-owner scheduler (lanes, ready rings, DRR, classes, futex idle). Header.
+work_pool.hh                  WorkPool/WorkGroup/WorkItem: the many-owner scheduler (lanes, ready rings, DRR, classes, futex idle). Header. Includes the three `work_pool_*.hh` pieces (futex/platform layer, idle parking, ready ring); see `docs/source-layout.md`.
 thread.hh                     Thread<Impl,policy> CRTP base, ThreadPolicyType enum (regular, logging), thread-name free function decls. Header.
 thread.cc                     The only .cc: run_thread/setup_thread/set_thread_name/get_thread_name/sched_getcpu.
 blocking_concurrent_queue.h   Mutex + condvar queue (not the pool's; kept for consumers). Header.
